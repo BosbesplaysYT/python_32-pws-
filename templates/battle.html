@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Zeeslag - Battle</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div id="game-container" class="container" data-game-code="{{ game_code }}">
+    <h1>Battle Fase</h1>
+    <div class="boards">
+      <div>
+        <h2>Eigen Bord</h2>
+        <div id="player-board" class="board"></div>
+      </div>
+      <div>
+        <h2>Tegenstander Bord</h2>
+        <div id="enemy-board" class="board"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

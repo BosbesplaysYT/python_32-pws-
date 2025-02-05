@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Zeeslag - Schepen Neerzetten</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container" data-game-code="{{ game_code }}" data-role="{{ role }}">
+    <h1>Schepen Neerzetten</h1>
+    <p>Selecteer een schip en klik op een cel in het bord om het te plaatsen. Je kunt al geplaatste schepen aanpassen.</p>
+    <button id="toggle-orientation" class="btn">Oriëntatie: horizontaal</button>
+    <!-- Lijst met beschikbare schepen -->
+    <div id="ship-list">
+      <!-- Voorbeeld: de speler moet drie schepen plaatsen -->
+      <button class="ship-btn" data-ship-id="ship1" data-length="2">Schip 1 (2 cellen)</button>
+      <button class="ship-btn" data-ship-id="ship2" data-length="3">Schip 2 (3 cellen)</button>
+      <button class="ship-btn" data-ship-id="ship3" data-length="4">Schip 3 (4 cellen)</button>
+    </div>
+    <!-- Het setup bord: een 10x10 grid -->
+    <div id="setup-board" class="board"></div>
+    <button id="finishSetup" class="btn" disabled>Klaar! (Alle schepen geplaatst)</button>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

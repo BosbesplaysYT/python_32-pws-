@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zeeslag - Eindscherm</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Einde van de game</h1>
+        <p>Game Code: {{ game_code }}</p>
+        <p>Je hebt {{ result }}!</p>
+        <div id="stats">
+            <!-- Statistieken of animatie hier -->
+        </div>
+        <form action="{{ url_for('start') }}" method="get">
+            <button type="submit" class="btn replay">Speel opnieuw</button>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

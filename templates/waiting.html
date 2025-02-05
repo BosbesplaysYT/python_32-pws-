@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zeeslag - Wachten</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Voeg een data-attribuut toe zodat de JavaScript de gamecode kan ophalen -->
+    <div id="waiting-container" data-game-code="{{ game_code }}">
+        <h1>Wachten op een tegenstander</h1>
+        <p>De game code is: <strong>{{ game_code }}</strong></p>
+        <p>Deel deze code met je vriend om mee te doen!</p>
+    </div>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
