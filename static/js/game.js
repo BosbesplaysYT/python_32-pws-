@@ -1,52 +1,36 @@
-// Voorbeeld: polling in het wacht-scherm om te zien of de game gestart kan worden.
 document.addEventListener("DOMContentLoaded", function() {
-    if(document.getElementById('game-board') === null) {
-        // Dit is geen spel scherm, maar mogelijk een wacht-scherm.
-        // Je kunt hier regelmatig een verzoek sturen naar de server om te checken of de game klaar is.
-        console.log("Wacht-scherm actief...");
-    } else {
-        // Initialiseer het spelbord en andere game logica.
-        console.log("Game scherm actief...");
-    }
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-    // Controleer of we op de wachtpagina zijn door te kijken naar de container
-    const waitingContainer = document.getElementById("waiting-container");
-    if (waitingContainer) {
-        const gameCode = waitingContainer.dataset.gameCode;
-        // Poll elke 3 seconden de server om te zien of de game klaar is
-        const checkInterval = setInterval(() => {
-            fetch(`/check_game/${gameCode}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.joined) {
-                        clearInterval(checkInterval);
-                        // Redirect naar de gamepagina zodra er een tegenstander is
-                        window.location.href = `/setup/${gameCode}`;
-                    }
-                })
-                .catch(error => console.error('Error bij het controleren van de game status:', error));
-        }, 1000); // 1000 milliseconden = 1 seconden
-    }
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-  const boardSize = 10;
+  // 1. Wacht-scherm (indien aanwezig)
+  const waitingContainer = document.getElementById("waiting-container");
+  if (waitingContainer) {
+    const gameCode = waitingContainer.dataset.gameCode;
+    const checkInterval = setInterval(() => {
+      fetch(`/check_game/${gameCode}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.joined) {
+            clearInterval(checkInterval);
+            window.location.href = `/setup/${gameCode}`;
+          }
+        })
+        .catch(error => console.error('Error bij het controleren van de game status:', error));
+    }, 1000);
+  }
   
-  // Haal gemeenschappelijke data op (indien aanwezig)
+  // 2. Haal algemene gegevens op (zoals gameCode en role)
   const container = document.querySelector('.container');
   const gameCode = container ? container.dataset.gameCode : null;
   const role = container ? container.dataset.role || 'creator' : null;
 
-  // Socket.IO connectie (zoals je al had)
+  // 3. Initialiseer Socket.IO maar één keer
   let socket = null;
   if (gameCode) {
     socket = io();
     socket.emit('join', { game_code: gameCode });
+    
     socket.on('message', function(msg) {
       console.log('Bericht ontvangen van server:', msg);
     });
+    
     socket.on('both_ready', function(data) {
       if (data.redirect) {
         window.location.href = data.redirect;
@@ -56,6 +40,7 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // === Setup Fase: Schepen Neerzetten ===
   const setupBoard = document.getElementById("setup-board");
+  const boardSize = 10;
   if (setupBoard) {
     // Beschikbare schepen
     let availableShips = [
@@ -188,77 +173,79 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-    // === Battle Fase: Twee Borden opbouwen ===
-
-    let isMyTurn = false;  // Wordt later ingesteld via socket 'turn_change'
-
-    const playerBoard = document.getElementById("player-board");
-    const enemyBoard = document.getElementById("enemy-board");
-    if (playerBoard && enemyBoard) {
-      // Functie om een grid op te bouwen
-      function createGrid(boardElement) {
-        boardElement.innerHTML = "";
-        for (let row = 0; row < boardSize; row++) {
-          for (let col = 0; col < boardSize; col++) {
-            const cell = document.createElement("div");
-            cell.classList.add("cell");
-            cell.dataset.row = row;
-            cell.dataset.col = col;
-            boardElement.appendChild(cell);
-          }
+    // 5. Code specifiek voor de Battle Fase
+  const playerBoard = document.getElementById("player-board");
+  const enemyBoard = document.getElementById("enemy-board");
+  if (playerBoard && enemyBoard) {
+    // Start de battle-fase (alleen als we in de battle-pagina zitten)
+    if (gameCode) {
+      socket.emit('start_battle', { game_code: gameCode });
+    }
+    
+    let isMyTurn = false;
+    
+    // Bouw de borden op
+    function createGrid(boardElement) {
+      boardElement.innerHTML = "";
+      for (let row = 0; row < 10; row++) {
+        for (let col = 0; col < 10; col++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          boardElement.appendChild(cell);
         }
       }
-      createGrid(playerBoard);
-      createGrid(enemyBoard);
-  
-      // Voeg een klik-handler toe aan het vijandelijke bord om een schot af te vuren
-      enemyBoard.addEventListener("click", function(e) {
-        const cell = e.target;
-        if (cell.classList.contains("cell") && !cell.classList.contains("shot")) {
-          if (!isMyTurn) {
-            alert("Wacht op je beurt!");
-            return;
-          }
-          const row = parseInt(cell.dataset.row);
-          const col = parseInt(cell.dataset.col);
-          // Stuur het schot via Socket.IO
-          socket.emit('fire_shot', { game_code: gameCode, row: row, col: col, role: role });
-        }
-      });
-
-      // Ontvangt de uitkomst van een schot (hit of miss)
-      socket.on('shot_result', function(data) {
-        console.log(`Schot door ${data.shooter} op [${data.row}, ${data.col}]: ${data.result}`);
-        if (data.shooter === role) {
-          // Dit is jouw schot op het vijandelijke bord
-          const enemyCell = enemyBoard.querySelector(`.cell[data-row='${data.row}'][data-col='${data.col}']`);
-          if (enemyCell) {
-            enemyCell.classList.add(data.result);  // voeg 'hit' of 'miss' toe als class
-            enemyCell.textContent = data.result === 'hit' ? 'X' : 'O';
-          }
-        } else {
-          // Dit is een schot van de tegenstander op jouw bord
-          const playerBoard = document.getElementById("player-board");
-          const playerCell = playerBoard.querySelector(`.cell[data-row='${data.row}'][data-col='${data.col}']`);
-          if (playerCell) {
-            playerCell.classList.add(data.result);
-            playerCell.textContent = data.result === 'hit' ? 'X' : 'O';
-          }
-        }
-      });
-
-      // Update wie er aan de beurt is
-      socket.on('turn_change', function(data) {
-        isMyTurn = (data.current_turn === role);
-        // Werk de UI bij (bijv. toon een bericht)
-        const turnMessage = document.getElementById("turn-message");
-        if (turnMessage) {
-          turnMessage.textContent = isMyTurn ? "Jij bent aan de beurt" : "Wacht op tegenstander...";
-        }
-      });
-
     }
-  });
+    createGrid(playerBoard);
+    createGrid(enemyBoard);
+    
+    // Klik-handler voor vijandelijk bord (schoten afvuren)
+    enemyBoard.addEventListener("click", function(e) {
+      const cell = e.target;
+      if (cell.classList.contains("cell") && !cell.classList.contains("shot")) {
+        if (!isMyTurn) {
+          alert("Wacht op je beurt!");
+          return;
+        }
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        socket.emit('fire_shot', { game_code: gameCode, row: row, col: col, role: role });
+      }
+    });
+    
+    // Luister naar de shot_result event
+    socket.on('shot_result', function(data) {
+      console.log(`Schot door ${data.shooter} op [${data.row}, ${data.col}]: ${data.result}`);
+      if (data.shooter === role) {
+        // Update vijandelijk bord
+        const enemyCell = enemyBoard.querySelector(`.cell[data-row='${data.row}'][data-col='${data.col}']`);
+        if (enemyCell) {
+          enemyCell.classList.add(data.result);
+          enemyCell.textContent = data.result === 'hit' ? 'X' : 'O';
+          enemyCell.classList.add("shot"); // Markeer cel als beschoten
+        }
+      } else {
+        // Update eigen bord
+        const playerCell = playerBoard.querySelector(`.cell[data-row='${data.row}'][data-col='${data.col}']`);
+        if (playerCell) {
+          playerCell.classList.add(data.result);
+          playerCell.textContent = data.result === 'hit' ? 'X' : 'O';
+          playerCell.classList.add("shot");
+        }
+      }
+    });
+    
+    // Luister naar turn_change event
+    socket.on('turn_change', function(data) {
+      isMyTurn = (data.current_turn === role);
+      const turnMessage = document.getElementById("turn-message");
+      if (turnMessage) {
+        turnMessage.textContent = isMyTurn ? "Jij bent aan de beurt" : "Wacht op tegenstander...";
+      }
+    });
+  }
+});
   
   
 
