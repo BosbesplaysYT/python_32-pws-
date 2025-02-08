@@ -1,22 +1,128 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Zeeslag - Eindscherm</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battleship - Game Over</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      color: white;
+      transition: background 1s ease-in-out;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 1.2em;
+      cursor: pointer;
+      border: none;
+      background-color: #ffcc00;
+      color: #333;
+      font-weight: bold;
+      border-radius: 8px;
+      transition: transform 0.2s ease, background 0.3s ease;
+    }
+    button:hover {
+      background-color: #ffaa00;
+      transform: scale(1.1);
+    }
+    /* Background for winners */
+    .win {
+      background: url('static/win.jpg') no-repeat center center/cover;
+    }
+    /* Background for losers */
+    .lose {
+      background: url('static/shipwreck.jpeg') no-repeat center center/cover;
+      animation: shake 0.5s infinite alternate;
+    }
+    /* Shake animation for losing players */
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(5px); }
+    }
+    /* Confetti effect */
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: red;
+      opacity: 0.8;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% {
+        transform: translateY(-10vh) translateX(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) translateX(calc(-50px + 100px * random()));
+        opacity: 0;
+      }
+    }
+    /* Mobile-friendly adjustments */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+      button {
+        font-size: 1em;
+        padding: 10px 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Einde van de game</h1>
-        <p>Game Code: {{ game_code }}</p>
-        <p>Je hebt {{ result }}!</p>
-        <div id="stats">
-            <!-- Statistieken of animatie hier -->
-        </div>
-        <form action="{{ url_for('start') }}" method="get">
-            <button type="submit" class="btn replay">Speel opnieuw</button>
-        </form>
-    </div>
-    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+  <h1 id="resultMessage"></h1>
+  <button id="newGameBtn">Start New Game</button>
+
+  <script>
+    const result = localStorage.getItem('result');
+    const body = document.body;
+    const resultMessage = document.getElementById('resultMessage');
+
+    if (result === "win") {
+      body.classList.add("win");
+      resultMessage.innerText = "🎉 Congratulations, you won! 🎉";
+      createConfetti();
+    } else {
+      body.classList.add("lose");
+      resultMessage.innerText = "☠️ Sorry, you lost. The sea claims another ship... ☠️";
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < 100; i++) {
+        let confetti = document.createElement("div");
+        confetti.classList.add("confetti");
+        confetti.style.left = Math.random() * 100 + "vw";
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        confetti.style.backgroundColor = ["red", "yellow", "blue", "green", "purple"][Math.floor(Math.random() * 5)];
+        document.body.appendChild(confetti);
+      }
+    }
+
+    document.getElementById('newGameBtn').addEventListener('click', () => {
+      localStorage.removeItem('gameCode');
+      localStorage.removeItem('player');
+      localStorage.removeItem('result');
+      window.location.href = '/';
+    });
+  </script>
 </body>
 </html>

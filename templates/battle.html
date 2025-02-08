@@ -1,25 +1,296 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Zeeslag - Battle</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battleship Battle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background: url('static/ocean.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #000000;
+    }
+    h1, h2 {
+      margin-bottom: 10px;
+    }
+    .board-container {
+      display: inline-block;
+      margin: 20px;
+      background: rgba(0,0,0,0.75);
+      padding: 20px;
+      border-radius: 10px;
+      color: white;
+    }
+    table {
+      border-collapse: collapse;
+      margin: auto;
+    }
+    td {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #333;
+      text-align: center;
+      vertical-align: middle;
+      font-weight: bold;
+      cursor: default;
+      background: rgba(0,0,0,0.1);
+    }
+    /* For your board, ship cells are blue */
+    .ship {
+      background-color: lightblue;
+    }
+    /* A cell that has been hit is marked in red */
+    .hit {
+      background-color: red;
+      color: white;
+    }
+    /* A miss is marked in gray */
+    .miss {
+      background-color: lightgray;
+    }
+    /* Enemy board cells that are clickable */
+    .clickable {
+      cursor: pointer;
+    }
+    /* Sunk ship cells are marked distinctly */
+    .sunk {
+      background-color: darkred;
+      color: white;
+    }
+    /* Incoming miss marker for brief display */
+    .incoming-miss {
+      background-color: orange;
+      animation: fadeOut 2s forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    /* Status message for sunk ships */
+    .sunk-message {
+      font-size: 18px;
+      color: yellow;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <div id="game-container" class="container" data-game-code="{{ game_code }}">
-    <h1>Battle Fase</h1>
-    <div class="boards">
-      <div>
-        <h2>Eigen Bord</h2>
-        <div id="player-board" class="board"></div>
-      </div>
-      <div>
-        <h2>Tegenstander Bord</h2>
-        <div id="enemy-board" class="board"></div>
-      </div>
-    </div>
+  <h1>Battleship Battle</h1>
+  <div id="statusMessage" style="font-size: 20px; margin-bottom: 10px;"></div>
+  <div id="sunkMessage" class="sunk-message"></div>
+  <div class="board-container">
+    <h2>Your Board</h2>
+    <table id="myBoard"></table>
   </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
-  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+  <div class="board-container">
+    <h2>Enemy Board</h2>
+    <table id="enemyBoard"></table>
+  </div>
+
+  <script>
+    const boardSize = 10;
+    // Retrieve gameCode and player from localStorage
+    const gameCode = localStorage.getItem('gameCode');
+    const player = localStorage.getItem('player');
+    const opponent = (player === 'player1') ? 'player2' : 'player1';
+
+    // Create the two boards.
+    function createBoard(tableId, isEnemy) {
+      const table = document.getElementById(tableId);
+      for (let y = 0; y < boardSize; y++) {
+        const tr = document.createElement('tr');
+        for (let x = 0; x < boardSize; x++) {
+          const td = document.createElement('td');
+          td.id = `${tableId}-${x}-${y}`;
+          if (isEnemy) {
+            td.classList.add('clickable');
+            td.addEventListener('click', () => cellClick(x, y));
+          }
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+    }
+    createBoard('myBoard', false);
+    createBoard('enemyBoard', true);
+
+    let canFire = false;
+    let enemyShots = [];
+    let announcedSunkShips = {}; // To track already announced sunk ships
+
+    function cellClick(x, y) {
+      if (!canFire) return; // Not your turn
+      if (enemyShots.some(pos => pos[0] === x && pos[1] === y)) return;
+      
+      fetch('/fire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameCode: gameCode, player: player, x: x, y: y })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+        }
+        updateGameState();
+      })
+      .catch(err => console.error('Error firing:', err));
+    }
+
+    function updateGameState() {
+      fetch(`/game_state?gameCode=${gameCode}`)
+        .then(res => res.json())
+        .then(game => {
+          const myData = game.players[player];
+          const enemyData = game.players[opponent];
+          const statusMsg = document.getElementById('statusMessage');
+          const sunkMsg = document.getElementById('sunkMessage');
+
+          if (game.status === "gameover") {
+            if (game.winner === player) {
+              localStorage.setItem('result', 'win');
+            } else {
+              localStorage.setItem('result', 'lose');
+            }
+            window.location.href = '/end';
+            return;
+          } else if (game.status === "battle") {
+            if (game.turn === player) {
+              statusMsg.innerText = "Your turn";
+              canFire = true;
+            } else {
+              statusMsg.innerText = "Opponent's turn";
+              canFire = false;
+            }
+          } else {
+            statusMsg.innerText = "Waiting...";
+            canFire = false;
+          }
+
+          // ----- Update Your Board -----
+          // Clear your board.
+          for (let y = 0; y < boardSize; y++) {
+            for (let x = 0; x < boardSize; x++) {
+              const cell = document.getElementById(`myBoard-${x}-${y}`);
+              cell.className = "";
+              cell.innerText = "";
+            }
+          }
+          // Draw your ships.
+          if (myData && myData.ships) {
+            myData.ships.forEach(ship => {
+              ship.positions.forEach(pos => {
+                const cell = document.getElementById(`myBoard-${pos[0]}-${pos[1]}`);
+                if (cell) cell.classList.add('ship');
+              });
+            });
+          }
+          // Mark opponent's hits on your board.
+          if (enemyData && enemyData.hits) {
+            enemyData.hits.forEach(pos => {
+              const cell = document.getElementById(`myBoard-${pos[0]}-${pos[1]}`);
+              if (cell) {
+                if (cell.classList.contains('ship')) {
+                  cell.classList.add('hit');
+                  cell.innerText = "X";
+                } else {
+                  cell.classList.add('miss');
+                  cell.innerText = "O";
+                }
+              }
+            });
+          }
+          // Display incoming opponent misses (briefly) on your board.
+          if (myData && myData.incoming_misses) {
+            const now = Date.now() / 1000;
+            myData.incoming_misses.forEach(miss => {
+              const timeSince = now - miss.timestamp;
+              const cell = document.getElementById(`myBoard-${miss.pos[0]}-${miss.pos[1]}`);
+              if (cell && timeSince < 2) {
+                cell.classList.add('incoming-miss');
+              }
+            });
+          }
+
+          // ----- Update Enemy Board -----
+          enemyShots = [];
+          for (let y = 0; y < boardSize; y++) {
+            for (let x = 0; x < boardSize; x++) {
+              const cell = document.getElementById(`enemyBoard-${x}-${y}`);
+              cell.className = "clickable";
+              cell.innerText = "";
+            }
+          }
+          if (myData) {
+            if (myData.hits) {
+              myData.hits.forEach(pos => {
+                const cell = document.getElementById(`enemyBoard-${pos[0]}-${pos[1]}`);
+                if (cell) {
+                  cell.classList.remove("clickable");
+                  cell.classList.add("hit");
+                  cell.innerText = "X";
+                  enemyShots.push(pos);
+                }
+              });
+            }
+            if (myData.misses) {
+              myData.misses.forEach(pos => {
+                const cell = document.getElementById(`enemyBoard-${pos[0]}-${pos[1]}`);
+                if (cell) {
+                  cell.classList.remove("clickable");
+                  cell.classList.add("miss");
+                  cell.innerText = "O";
+                  enemyShots.push(pos);
+                }
+              });
+            }
+          }
+          // Mark enemy sunk ships on enemy board.
+          if (enemyData && enemyData.ships) {
+            enemyData.ships.forEach(ship => {
+              if (ship.sunk) {
+                // Create a unique key for the ship based on its positions.
+                const shipKey = JSON.stringify(ship.positions);
+                if (!announcedSunkShips[shipKey]) {
+                  sunkMsg.innerText = `You sunk an enemy ship of length ${ship.positions.length}!`;
+                  // Clear the message after 3 seconds.
+                  setTimeout(() => { sunkMsg.innerText = ""; }, 3000);
+                  announcedSunkShips[shipKey] = true;
+                }
+                ship.positions.forEach(pos => {
+                  const cell = document.getElementById(`enemyBoard-${pos[0]}-${pos[1]}`);
+                  if (cell) {
+                    cell.classList.remove("hit");
+                    cell.classList.add("sunk");
+                    cell.innerText = "S";
+                  }
+                });
+              }
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Error updating game state:', err);
+          const statusMsg = document.getElementById('statusMessage');
+          statusMsg.innerText = "Error updating game state. Please try again later.";
+          // Clear both boards
+          for (let y = 0; y < boardSize; y++) {
+            for (let x = 0; x < boardSize; x++) {
+              document.getElementById(`myBoard-${x}-${y}`).className = "";
+              document.getElementById(`myBoard-${x}-${y}`).innerText = "";
+              document.getElementById(`enemyBoard-${x}-${y}`).className = "";
+              document.getElementById(`enemyBoard-${x}-${y}`).innerText = "";
+            }
+          }
+        });
+    }
+
+    // Poll the server every second.
+    setInterval(updateGameState, 1000);
+    updateGameState();
+  </script>
 </body>
 </html>
