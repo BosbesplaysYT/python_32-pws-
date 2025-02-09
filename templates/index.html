@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Battleship Lobby</title>
+  <title>Zeeslag - Lobby</title>
   <!-- You can include a Google Font for a sharper look -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -99,11 +99,17 @@
 <body>
   <!-- Lobby container -->
   <div id="lobby">
-    <h1>Battleship Lobby</h1>
-    <input id="playerName" type="text" placeholder="Enter your name">
-    <button id="createGame">Create Game</button>
-    <input id="joinCode" type="text" placeholder="Enter game code to join">
-    <button id="joinGame">Join Game</button>
+    <h1>Zeeslag Lobby</h1>
+    <input id="createPlayerName" type="text" placeholder="Jouw naam">
+    <button id="createGame">Game aanmaken</button>
+    <div style="text-align: center; margin: 20px 0;">
+      <hr style="border: 1px solid #fff;">
+      <p style="margin: 10px 0;">Of:</p>
+      <hr style="border: 1px solid #fff;">
+    </div>
+    <input id="joinPlayerName" type="text" placeholder="Jouw naam">
+    <input id="joinCode" type="text" placeholder="Game Code">
+    <button id="joinGame">Game joinen</button>
   </div>
 
   <script>
@@ -112,11 +118,12 @@
 
     // Create game: send a POST to /create and then clear the DOM to show a confirmation screen.
     document.getElementById('createGame').addEventListener('click', () => {
-      const name = document.getElementById('playerName').value.trim();
+      const name = document.getElementById('createPlayerName').value.trim();
       if (!name) {
-        alert("Please enter your name.");
+        alert("Voer alsjeblieft je naam in.");
         return;
       }
+      localStorage.setItem('playerName', name);
       fetch('/create', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -130,10 +137,10 @@
           // Clear the entire DOM and show a nicely styled confirmation message.
           document.body.innerHTML = `
             <div class="confirmation">
-              <h1>Game Created!</h1>
-              <p>Your Game Code is:</p>
+              <h1>Game aangemaakt!</h1>
+              <p>Je Game Code is:</p>
               <p style="font-size:2em; font-weight:bold;">${gameCode}</p>
-              <p>Share this code with your opponent to join the battle.</p>
+              <p>Deel deze code met je tegenstander om te starten.</p>
             </div>
           `;
         } else if (data.error) {
@@ -145,12 +152,13 @@
 
     // Join game: send a POST to /join and show a waiting message.
     document.getElementById('joinGame').addEventListener('click', () => {
-      const name = document.getElementById('playerName').value.trim();
+      const name = document.getElementById('joinPlayerName').value.trim();
       const code = document.getElementById('joinCode').value.trim();
       if (!name || !code) {
-        alert("Please enter your name and game code.");
+        alert("Voer alsjeblieft je naam en game code in.");
         return;
       }
+      localStorage.setItem('playerName', name);
       fetch('/join', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -162,8 +170,8 @@
           gameCode = code;
           player = "player2";
           document.getElementById('lobby').innerHTML = `
-            <h1>Battleship Lobby</h1>
-            <p style="text-align:center; font-size:1.2em;">Joined game successfully. Waiting for both players to be ready...</p>
+            <h1>Zeeslag Lobby</h1>
+            <p style="text-align:center; font-size:1.2em;">Game met succes gejoined. Wachten totdat beide spelers klaar zijn...</p>
           `;
         } else {
           alert(data.error);

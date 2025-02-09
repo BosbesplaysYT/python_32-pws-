@@ -112,10 +112,11 @@
 </head>
 <body>
   <div id="setup-container">
-    <h1>Place Your Ships</h1>
+    <h1>Plaats je schepen!</h1>
+    <p>Sleep de schepen naar het speelveld en klik op "Klaar" als je klaar bent. Dubbelklik een schip om te verwijderen.</p>
     <p>
-      <strong>Orientation:</strong> <span id="orientationDisplay">Horizontal</span>
-      <button id="toggleOrientation">Toggle Orientation</button>
+      <strong>Orientatie:</strong> <span id="orientationDisplay">Horizontaal</span>
+      <button id="toggleOrientation">Orientatie draaien</button>
     </p>
     <!-- The Ship Selection Panel -->
     <div id="ship-selection"></div>
@@ -123,7 +124,7 @@
     <!-- The Board -->
     <div id="boardContainer"></div>
     
-    <button id="done" disabled>Done</button>
+    <button id="done" disabled>Klaar</button>
   </div>
   
   <script>
@@ -160,7 +161,7 @@
         const shipDiv = document.createElement('div');
         shipDiv.className = 'ship';
         shipDiv.draggable = true;
-        shipDiv.innerText = 'Ship ' + ship.length;
+        shipDiv.innerText = 'Schip met lengte ' + ship.length;
         shipDiv.dataset.shipId = ship.id;
         shipDiv.dataset.length = ship.length;
         // Drag events for desktop browsers.
@@ -334,7 +335,7 @@
     // Toggle orientation.
     document.getElementById('toggleOrientation').addEventListener('click', function() {
       currentOrientation = (currentOrientation === 'H' ? 'V' : 'H');
-      document.getElementById('orientationDisplay').innerText = (currentOrientation === 'H' ? 'Horizontal' : 'Vertical');
+      document.getElementById('orientationDisplay').innerText = (currentOrientation === 'H' ? 'Horizontaal' : 'Verticaal');
     });
     
     // When "Done" is clicked, send the placements to the server.

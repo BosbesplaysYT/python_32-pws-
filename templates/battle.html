@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Battleship Battle</title>
+  <title>Zeeslag - Game</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -75,22 +75,52 @@
       color: yellow;
       margin-top: 10px;
     }
+    #fullscreenButton {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+      padding: 10px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>Battleship Battle</h1>
+  <button id="fullscreenButton">Volledig scherm</button>
+  <h1>Zeeslag - Vechten</h1>
   <div id="statusMessage" style="font-size: 20px; margin-bottom: 10px;"></div>
   <div id="sunkMessage" class="sunk-message"></div>
   <div class="board-container">
-    <h2>Your Board</h2>
+    <h2>Jouw bord</h2>
     <table id="myBoard"></table>
   </div>
   <div class="board-container">
-    <h2>Enemy Board</h2>
+    <h2>Tegenstander bord</h2>
     <table id="enemyBoard"></table>
   </div>
 
   <script>
+
+    // Request fullscreen when the user clicks the "Start Game" button.
+    document.getElementById('fullscreenButton').addEventListener('click', function() {
+      const docElm = document.documentElement;
+      if (docElm.requestFullscreen) {
+        docElm.requestFullscreen();
+      } else if (docElm.mozRequestFullScreen) { // Firefox
+        docElm.mozRequestFullScreen();
+      } else if (docElm.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        docElm.webkitRequestFullscreen();
+      } else if (docElm.msRequestFullscreen) { // IE/Edge
+        docElm.msRequestFullscreen();
+      }
+      // Hide the button after clicking.
+      this.style.display = 'none';
+    });
+
     const boardSize = 10;
     // Retrieve gameCode and player from localStorage
     const gameCode = localStorage.getItem('gameCode');
@@ -159,14 +189,14 @@
             return;
           } else if (game.status === "battle") {
             if (game.turn === player) {
-              statusMsg.innerText = "Your turn";
+              statusMsg.innerText = "Jouw beurt";
               canFire = true;
             } else {
-              statusMsg.innerText = "Opponent's turn";
+              statusMsg.innerText = "Tegenstanders beurt";
               canFire = false;
             }
           } else {
-            statusMsg.innerText = "Waiting...";
+            statusMsg.innerText = "Wachten op andere speler...";
             canFire = false;
           }
 
@@ -255,7 +285,7 @@
                 // Create a unique key for the ship based on its positions.
                 const shipKey = JSON.stringify(ship.positions);
                 if (!announcedSunkShips[shipKey]) {
-                  sunkMsg.innerText = `You sunk an enemy ship of length ${ship.positions.length}!`;
+                  sunkMsg.innerText = `Je hebt een schip van de tegenstander gezonken met lengte ${ship.positions.length}!`;
                   // Clear the message after 3 seconds.
                   setTimeout(() => { sunkMsg.innerText = ""; }, 3000);
                   announcedSunkShips[shipKey] = true;
@@ -275,7 +305,7 @@
         .catch(err => {
           console.error('Error updating game state:', err);
           const statusMsg = document.getElementById('statusMessage');
-          statusMsg.innerText = "Error updating game state. Please try again later.";
+          statusMsg.innerText = "Serverfout. Probeer opnieuw.";
           // Clear both boards
           for (let y = 0; y < boardSize; y++) {
             for (let x = 0; x < boardSize; x++) {

@@ -44,6 +44,9 @@ def join_game():
     if not player_name or not game_code:
         return jsonify({"error": "Missing player name or game code"}), 400
     
+    # Uppercase only the letters in the game code.
+    game_code = ''.join(char.upper() if char.isalpha() else char for char in game_code)
+    
     if game_code not in games:
         return jsonify({"error": "Invalid game code"}), 400
     

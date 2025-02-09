@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Battleship - Game Over</title>
+  <title>Zeeslag - Game Over</title>
   <style>
     body {
       text-align: center;
@@ -90,7 +90,7 @@
 </head>
 <body>
   <h1 id="resultMessage"></h1>
-  <button id="newGameBtn">Start New Game</button>
+  <button id="newGameBtn">Nog een potje? :)</button>
 
   <script>
     const result = localStorage.getItem('result');
@@ -99,11 +99,11 @@
 
     if (result === "win") {
       body.classList.add("win");
-      resultMessage.innerText = "🎉 Congratulations, you won! 🎉";
+      resultMessage.innerText = "🎉 Gewonnen! 🎉";
       createConfetti();
     } else {
       body.classList.add("lose");
-      resultMessage.innerText = "☠️ Sorry, you lost. The sea claims another ship... ☠️";
+      resultMessage.innerText = "☠️ Verloren. Nog een schip dat in de zee vergaat... ☠️";
     }
 
     function createConfetti() {
