@@ -52,7 +52,7 @@ def join_game():
     
     game = games[game_code]
     if game["players"]["player2"] is not None:
-        return jsonify({"error": "Game already has two players"}), 400
+        return jsonify({"error": "Game heeft al 2 spelers"}), 400
     
     game["players"]["player2"] = {
         "name": player_name,
@@ -137,9 +137,6 @@ def fire():
         # NEW: Also record the miss on the defender’s record with a timestamp.
         game["players"][opponent]["incoming_misses"].append({"pos": [x, y], "timestamp": time.time()})
     
-    # Change turn.
-    game["turn"] = opponent
-
     # Check win condition: if every opponent ship cell has been hit.
     all_opponent_positions = []
     for ship in opponent_ships:
@@ -157,6 +154,9 @@ def fire():
                 ship["sunk"] = True
                 sunk_ship = ship
                 break
+    else:
+        # Change turn only if it was a miss.
+        game["turn"] = opponent
 
     response = {
         "hit": hit,
