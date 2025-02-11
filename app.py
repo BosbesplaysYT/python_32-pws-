@@ -253,17 +253,13 @@ def list_games():
 def setup():
     return render_template('setup.html')
 
-@app.route('/')
+@app.route('/pws')
 def home():
     return render_template('index.html')
 
 @app.route('/battle')
 def battle():
     return render_template('battle.html')
-
-@app.route('/end')
-def end():
-    return render_template('end.html')
 
 @app.route('/spectate_callback')
 def spectate():
