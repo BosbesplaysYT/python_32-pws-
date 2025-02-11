@@ -71,34 +71,36 @@
     }
 
     /* Mobile optimizations */
-  @media (max-width: 480px) {
-    body {
-      padding: 10px;
-    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
 
-    #lobby, .confirmation {
-      padding: 20px;
-      width: 95%;
-    }
+      #lobby, .confirmation {
+        padding: 20px;
+        width: 95%;
+      }
 
-    h1 {
-      font-size: 1.8em;
-    }
+      h1 {
+        font-size: 1.8em;
+      }
 
-    input, button {
-      font-size: 0.9em;
-      padding: 10px;
-    }
+      input, button {
+        font-size: 0.9em;
+        padding: 10px;
+      }
 
-    .confirmation p {
-      font-size: 1em;
+      .confirmation p {
+        font-size: 1em;
+      }
     }
-  }
   </style>
 </head>
 <body>
   <!-- Lobby container -->
   <div id="lobby">
+    <!-- Logo added above the title -->
+    <img src="static/zeeslag.png" alt="Zeeslag Logo" style="display: block; margin: 0 auto 20px auto; max-width: 150px;">
     <h1>Zeeslag Lobby</h1>
     <div style="text-align: center; margin: 20px 0;">
       <hr style="border: 1px solid #fff;">
@@ -137,9 +139,10 @@
         if (data.gameCode) {
           gameCode = data.gameCode;
           player = "player1";
-          // Clear the entire DOM and show a nicely styled confirmation message.
+          // Clear the entire DOM and show a confirmation message with the logo.
           document.body.innerHTML = `
             <div class="confirmation">
+              <img src="static/zeeslag.png" alt="Zeeslag Logo" style="display: block; margin: 0 auto 20px auto; max-width: 150px;">
               <h1>Game aangemaakt!</h1>
               <p>Je Game Code is:</p>
               <p style="font-size:2em; font-weight:bold;">${gameCode}</p>
@@ -172,7 +175,9 @@
         if (!data.error) {
           gameCode = code;
           player = "player2";
+          // Update the lobby container to show a waiting message along with the logo.
           document.getElementById('lobby').innerHTML = `
+            <img src="static/zeeslag.png" alt="Zeeslag Logo" style="display: block; margin: 0 auto 20px auto; max-width: 150px;">
             <h1>Zeeslag Lobby</h1>
             <p style="text-align:center; font-size:1.2em;">Game met succes gejoined. Wachten totdat beide spelers klaar zijn...</p>
           `;
