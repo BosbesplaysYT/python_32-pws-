@@ -193,6 +193,61 @@ def stop():
     del games[game_code]
     return jsonify({"message": f"Game {game_code} stopped"})
 
+@app.route('/spectate_state', methods=['GET'])
+def spectate_state():
+    game_code = request.args.get("gameCode")
+    if not game_code or game_code not in games:
+        return jsonify({"error": "Invalid game code"}), 400
+
+    game = games[game_code]
+    filtered_players = {}
+    for player, pdata in game["players"].items():
+        if pdata is None:
+            filtered_players[player] = None
+        else:
+            # Only include sunk ships for spectate view.
+            sunk_ships = []
+            if pdata.get("ships"):
+                for ship in pdata["ships"]:
+                    if ship.get("sunk"):
+                        sunk_ships.append(ship)
+            filtered_players[player] = {
+                "name": pdata["name"],  # Player's name included!
+                "hits": pdata.get("hits", []),
+                "misses": pdata.get("misses", []),
+                "sunk_ships": sunk_ships
+            }
+
+    # If there is a winner, look up and return the player's actual name.
+    winner_name = None
+    if game["winner"]:
+        winning_player = game["players"].get(game["winner"])
+        if winning_player:
+            winner_name = winning_player["name"]
+
+    response = {
+        "players": filtered_players,
+        "status": game["status"],
+        "turn": game["turn"],
+        "winner": winner_name,  # now returns the winning player's name, if any.
+        "opponentJoined": game["players"]["player2"] is not None
+    }
+    return jsonify(response)
+
+
+@app.route('/list_games', methods=['GET'])
+def list_games():
+    ongoing_games = []
+    for game_code, game in games.items():
+        if game.get("status") != "gameover":
+            ongoing_games.append({
+                "gameCode": game_code,
+                "status": game.get("status"),
+                "opponentJoined": game["players"]["player2"] is not None
+            })
+    return jsonify({"games": ongoing_games})
+
+
 # --- Page Routes ---
 @app.route('/setup')
 def setup():
@@ -209,6 +264,15 @@ def battle():
 @app.route('/end')
 def end():
     return render_template('end.html')
+
+@app.route('/spectate_callback')
+def spectate():
+    return render_template('spectate.html')
+
+@app.route('/spectate')
+def spectate_setup():
+    return render_template('spectate_list.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
